@@ -64,7 +64,9 @@ class WifiUtil():
         self._send_cmd_to_wpas(obj['name'], 'SCAN')
 
     def scan_results(self, obj):
-        """Get the AP list after scanning."""
+        """Get the AP list after scanning.
+        bss.akm modified display auth algorithms names
+        """
 
         bsses = []
         bsses_summary = self._send_cmd_to_wpas(obj['name'], 'SCAN_RESULTS', True)
@@ -79,16 +81,7 @@ class WifiUtil():
             bss.freq = int(values[1])
             bss.signal = int(values[2])
             bss.ssid = values[4]
-            bss.akm = []
-            if 'WPA-PSK' in values[3]:
-                bss.akm.append(AKM_TYPE_WPAPSK)
-            if 'WPA2-PSK' in values[3]:
-                bss.akm.append(AKM_TYPE_WPA2PSK)
-            if 'WPA-EAP' in values[3]:
-                bss.akm.append(AKM_TYPE_WPA)
-            if 'WPA2-EAP' in values[3]:
-                bss.akm.append(AKM_TYPE_WPA2)
-
+            bss.akm = values[3]
             bss.auth = AUTH_ALG_OPEN
 
             bsses.append(bss)
@@ -104,7 +97,8 @@ class WifiUtil():
             True)
         network_summary = network_summary[:-1].split('\n')
         if len(network_summary) == 1:
-            return networks
+            self._logger.info(f'{network_summary=}')
+            return network
 
         for l in network_summary[1:]:
             values = l.split('\t')
@@ -308,7 +302,7 @@ class WifiUtil():
         while retry >= 0:
             reply = sock.recv(REPLY_SIZE)
             if reply == b'':
-                self._logger.error("Connection to '%s' is broken!", iface_ctrl)
+                self._logger.error("Connection to '%s' is broken!", ctrl_iface)
                 break
 
             if reply.startswith(b'PONG'):
